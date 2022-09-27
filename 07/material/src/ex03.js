@@ -41,7 +41,7 @@ export default function example() {
 	// Mesh
 	const geometry = new THREE.SphereGeometry(1, 16, 16);
 
-    // MeshPhongMaterial,MeshStandardMaterial : 하이라이트, 반사광 표현 가능한 재질
+    // MeshPhongMaterial, MeshStandardMaterial : 하이라이트, 반사광 표현 가능한 재질
     const material1 = new THREE.MeshPhongMaterial({
 		color: 'orangered',
         shininess : 1000 // 하이라이트,반사광 조절

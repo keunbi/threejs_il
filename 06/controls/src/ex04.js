@@ -39,8 +39,8 @@ export default function example() {
 	// Controls
     // FlyControls와 비슷. 기능을 추가하거나 수정해서 다시 만든 버전
 	const controls = new FirstPersonControls(camera, renderer.domElement);
-    // controls.movementSpeed = 10;
-    // controls.activeLook = false;
+    // controls.movementSpeed = 10; 움직이는 속도조절
+    // controls.activeLook = false; 마우스 위치에 따라 서서히 움직이는 것 제어
     // controls.lookSpeed = 0.1;
 
 	// Mesh
