@@ -9,7 +9,7 @@ export default function example() {
     // 텍스쳐 이미지 로드하려면 TextureLoader라는 객체를 사용해야 함
     const textureLoader = new THREE.TextureLoader();
     //const textureImage = textureLoader.load('/textures/brick/Brick_Wall_019_basecolor.jpg');
-    const texture= textureLoader.load(
+    const texture = textureLoader.load(
         '/textures/brick/Brick_Wall_019_basecolor.jpg',
         () => {
             console.log('로드완료');

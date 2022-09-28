@@ -1,0 +1,118 @@
+import * as THREE from 'three';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import { RectAreaLight, RectAreaLightHelper } from 'three/examples/jsm/helpers/RectAreaLightHelper';
+import dat from 'dat.gui';
+
+// ----- 주제: RectAreaLight (사각형 영역에서 뿜어내는 조명. 사각형 모양의 빛)
+
+export default function example() {
+	// Renderer
+	const canvas = document.querySelector('#three-canvas');
+	const renderer = new THREE.WebGLRenderer({
+		canvas,
+		antialias: true
+	});
+	renderer.setSize(window.innerWidth, window.innerHeight);
+	renderer.setPixelRatio(window.devicePixelRatio > 1 ? 2 : 1);
+
+    // 그림자 설정
+    renderer.shadowMap.enabled = true; // 조명과 각각의 물체에서도 설정해줘야 함
+    // renderer.shadowMap.type = THREE.PCFShadowMap; // 기본값
+    // renderer.shadowMap.type = THREE.BasicShadowMap; // 픽셀처럼 끊어지는 효과. shadow.mapSize.width로 픽셀크기 조정가능
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap; // PCFShadowMap 기본과 비슷하지만 좀 더 부드러움
+    
+	// Scene
+	const scene = new THREE.Scene();
+
+	// Camera
+	const camera = new THREE.PerspectiveCamera(
+		75,
+		window.innerWidth / window.innerHeight,
+		0.1,
+		1000
+	);
+	camera.position.y = 1.5;
+	camera.position.z = 4;
+	scene.add(camera);
+
+	// Light
+	const light = new THREE.RectAreaLight('orange', 10, 2, 2); // 2x2 사이즈의 사각형 안에서 뿜어내는 빛
+	// light.position.x = -5;
+    light.position.y = 2;
+	scene.add(light);
+
+    // RectAreaLightHelper는 threejs에 기본적으로 포함되어있지 않아서 import해줘야 함
+    // three에 포함되어있지 않고 import로 직접가져왔으므로 THREE. 빼줘야함
+	const lightHelper = new RectAreaLightHelper(light);
+	scene.add(lightHelper);
+
+
+
+	// Controls
+	const controls = new OrbitControls(camera, renderer.domElement);
+
+	// Geometry
+	const planeGeoetry = new THREE.PlaneGeometry(10, 10);
+	const boxGeometry = new THREE.BoxGeometry(1, 1, 1);
+	const sphereGeometry = new THREE.SphereGeometry(0.7, 16, 16)
+
+	// Material
+	const material1 = new THREE.MeshStandardMaterial({ color: 'white' });
+	const material2 = new THREE.MeshStandardMaterial({ color: 'white' });
+	const material3 = new THREE.MeshStandardMaterial({ color: 'white' });
+
+	// Mesh
+	const plane = new THREE.Mesh(planeGeoetry, material1);
+	const box = new THREE.Mesh(boxGeometry, material2);
+	const sphere = new THREE.Mesh(sphereGeometry, material3);
+
+	plane.rotation.x = -Math.PI * 0.5; // -90도 돌려서 바닥으로 눕혀줌
+	box.position.set(1, 1, 0);
+	sphere.position.set(-1, 1, 0);
+
+    // 그림자 설정
+    plane.receiveShadow = true; // plane에 영향을 받아 어디 그림자가 생기지 않고 바닥역할을 하므로 castShadow 지정안함
+    box.castShadow = true;
+    box.receiveShadow = true;
+    sphere.castShadow = true;
+    sphere.receiveShadow = true;
+
+	scene.add(plane, box, sphere);
+
+	// AxesHelper
+	const axesHelper = new THREE.AxesHelper(3);
+	scene.add(axesHelper);
+
+	// Dat GUI
+	const gui = new dat.GUI();
+	// gui.add(camera.position, 'x', -5, 5, 0.1).name('카메라 X');
+	gui.add(light.position, 'x', -5, 5);
+	gui.add(light.position, 'y', -5, 5);
+	gui.add(light.position, 'z', -5, 5);
+
+	// 그리기
+	const clock = new THREE.Clock();
+
+	function draw() {
+		// const delta = clock.getDelta();
+        const time = clock.getElapsedTime();
+
+        // light.position.x = Math.cos(time);
+        // light.position.z = Math.sin(time);
+
+		renderer.render(scene, camera);
+		renderer.setAnimationLoop(draw);
+	}
+
+	function setSize() {
+		camera.aspect = window.innerWidth / window.innerHeight;
+		camera.updateProjectionMatrix();
+		renderer.setSize(window.innerWidth, window.innerHeight);
+		renderer.render(scene, camera);
+	}
+
+	// 이벤트
+	window.addEventListener('resize', setSize);
+
+	draw();
+}
