@@ -74,11 +74,22 @@ export default function example() {
 	const clock = new THREE.Clock();
 
 	function draw() {
-		const delta = clock.getDelta();
+		//const delta = clock.getDelta();
+		const time = clock.getElapsedTime(); // 경과시간
+
+		boxMesh.position.y = Math.sin(time) * 2;
+		torusMesh.position.y = Math.cos(time) * 2;
+		boxMesh.material.color.set('plum');
+		torusMesh.material.color.set('lime');
 		
+
 		const origin = new THREE.Vector3(0, 0, 100); // 광선을 쏘는 출발점
 		const direction = new THREE.Vector3(0, 0, -1); // 광선을 쏘는 방향
-		raycaster.set(origin, direction);
+
+		// const direction = new THREE.Vector3(0, 0, -100); 방향을 -100으로 하고싶으면
+		// direction.normalize(); 로 정교화 해줘야함
+
+ 		raycaster.set(origin, direction);
 
 		// 배열에 있는 mesh들이 광선에 맞았는지 체크
 		// console.log(raycaster.intersectObjects(meshes));
@@ -86,7 +97,7 @@ export default function example() {
 
 		const intersects = raycaster.intersectObjects(meshes);
 		intersects.forEach(item => {
-			console.log(item.object.name); // 어떤 mesh가 맞았는지 이름 넣어 확인
+			// console.log(item.object.name); // 어떤 mesh가 맞았는지 이름 넣어 확인
 			item.object.material.color.set('red'); // 맞은 mesh 색상 변경
 		});
 
