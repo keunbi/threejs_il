@@ -3,6 +3,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import * as CANNON from 'cannon-es';
 import { PreventDragClick } from './PrevenDragClick';
 import { MySphere } from './MySphere';
+import { GridBroadphase, NaiveBroadphase } from 'cannon-es';
 
 // ----- 주제: 랜덤 위치에 공 생기기
 
@@ -54,6 +55,13 @@ export default function example() {
 	// Cannon(물리엔진)
 	const cannonWorld = new CANNON.World(); // threejs에서 scene이라고 생각
 	cannonWorld.gravity.set(0, -10, 0); // 중력셋팅
+
+	// 성능을 위한 세팅
+	cannonWorld.allowSleep = true; // 움직임이 거의 멈춘 body의 테스트를 안하게끔 해주는 속성
+	cannonWorld.broadphase = new CANNON.SAPBroadphase(cannonWorld); // 성능좋음
+	// NaiveBroadphase // 기본값
+	// GridBroadphase // 구역을 나누어 테스트
+
 
     // Contact Material
     const defaultMaterial = new CANNON.Material('default');
@@ -132,7 +140,7 @@ export default function example() {
 	// 이벤트
 	window.addEventListener('resize', setSize);
 
-    // 클릭하면 바람이 부는 이벤트
+    // 클릭하면 랜덤(위치, 크기)으로 공 생성
     canvas.addEventListener('click', () => {    
         spheres.push(new MySphere({
             scene, // scene: scene (속성과 값이 같은 경우 하나만 적어줘도 됨)
@@ -146,7 +154,7 @@ export default function example() {
         }));
     });
 
-    const prevenDragClick = new PreventDragClick(canvas);
+    const preventDragClick = new PreventDragClick(canvas);
 
 
 	draw();

@@ -2,8 +2,9 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import * as CANNON from 'cannon-es';
 import { PreventDragClick } from './PrevenDragClick';
+import { MySphere } from './MySphere';
 
-// ----- 주제: Force(힘)
+// ----- 주제: 제거하기
 
 // cannon.js 문서
 // http://schteppe.github.io/cannon.js/docs/
@@ -54,6 +55,13 @@ export default function example() {
 	const cannonWorld = new CANNON.World(); // threejs에서 scene이라고 생각
 	cannonWorld.gravity.set(0, -10, 0); // 중력셋팅
 
+	// 성능을 위한 세팅
+	cannonWorld.allowSleep = true; // 움직임이 거의 멈춘 body의 테스트를 안하게끔 해주는 속성
+	cannonWorld.broadphase = new CANNON.SAPBroadphase(cannonWorld); // 성능좋음
+	// NaiveBroadphase // 기본값
+	// GridBroadphase // 구역을 나누어 테스트
+
+
     // Contact Material
     const defaultMaterial = new CANNON.Material('default');
     const rubberMaterial = new CANNON.Material('rubber'); // 고무
@@ -85,17 +93,6 @@ export default function example() {
 	); 
 	cannonWorld.addBody(floorBody);
 
-	// 박스
-	const sphereShape = new CANNON.Sphere(0.5); // 반지름 넣어줌
-	const sphereBody = new CANNON.Body({
-		mass: 1,
-		position: new CANNON.Vec3(0, 10, 0),
-		shape: sphereShape,
-        material: defaultMaterial
-	})
-	cannonWorld.addBody(sphereBody);
-
-	
 	// Mesh
 	const floorMesh = new THREE.Mesh(
 		new THREE.PlaneGeometry(10, 10),
@@ -107,14 +104,11 @@ export default function example() {
     floorMesh.receiveShadow = true;
 	scene.add(floorMesh);
 
-	const sphereGeometry = new THREE.SphereGeometry(0.5);
+    const spheres = [];
+    const sphereGeometry = new THREE.SphereGeometry(0.5);
 	const sphereMaterial = new THREE.MeshStandardMaterial({
 		color: 'seagreen'
 	});
-	const sphereMesh = new THREE.Mesh(sphereGeometry, sphereMaterial);
-	sphereMesh.position.y = 0.5;
-    sphereMesh.castShadow = true;
-	scene.add(sphereMesh);
 
 	// 그리기
 	const clock = new THREE.Clock();
@@ -122,22 +116,14 @@ export default function example() {
 	function draw() {
 		const delta = clock.getDelta();
 
-		let cannonStepTime = 1/60;
+        let cannonStepTime = 1/60;
 		if(delta < 0.01) cannonStepTime = 1/120;
 		cannonWorld.step(cannonStepTime, delta, 3); // 화면주사율에 따라 쓰도록 cannonStepTime 지정
 
-		sphereMesh.position.copy(sphereBody.position); // 위치
-		sphereMesh.quaternion.copy(sphereBody.quaternion) // 회전
-
-
-        // 속도 감소 (0.98을 곱하는걸 누적하면 점점 작아지므로)
-        sphereBody.velocity.x *= 0.98;
-        sphereBody.velocity.y *= 0.98;
-        sphereBody.velocity.z *= 0.98;
-        sphereBody.angularVelocity.x *= 0.98;
-        sphereBody.angularVelocity.y *= 0.98;
-        sphereBody.angularVelocity.z *= 0.98;
-
+        spheres.forEach(item => {
+			item.mesh.position.copy(item.cannonBody.position);
+			item.mesh.quaternion.copy(item.cannonBody.quaternion);
+		});
 
 		renderer.render(scene, camera);
 		renderer.setAnimationLoop(draw);
@@ -150,25 +136,54 @@ export default function example() {
 		renderer.render(scene, camera);
 	}
 
+    const sound = new Audio('/sounds/boing.mp3');
+
+    function collide(e){    
+        const velocity = e.contact.getImpactVelocityAlongNormal();
+        console.log(velocity);
+        if(velocity > 3){ 
+            sound.currentTime = 0; // 충돌이 될 때마다 0으로 됨
+            sound.play();
+        }
+    }
+
 	// 이벤트
 	window.addEventListener('resize', setSize);
 
-    // 클릭하면 바람이 부는 이벤트
+    // 클릭하면 랜덤(위치, 크기)으로 공 생성
     canvas.addEventListener('click', () => {    
-        if(preventDragClick.mouseMoved) return;
+        const mySphere = new MySphere({
+            scene, // scene: scene (속성과 값이 같은 경우 하나만 적어줘도 됨)
+            cannonWorld,
+            geometry: sphereGeometry,
+            material: sphereMaterial,
+            x: (Math.random() - 0.5) * 2, // -1 ~ 1 범위 안에서 랜덤하게 나오도록 지정
+            y: Math.random() * 5 + 2, // 조금 위에 뜨도록 기본값 2 가지도록 지정
+            z: (Math.random() - 0.5) * 2,
+            scale: Math.random() + 0.2 // 최소 0.2
+        })
+        spheres.push(mySphere);
 
-        // 여러번 클릭하면 속도 빨라지는 것 방지
-        sphereBody.velocity.x = 0;
-        sphereBody.velocity.y = 0;
-        sphereBody.velocity.z = 0;
-        sphereBody.angularVelocity.x = 0;
-        sphereBody.angularVelocity.y = 0;
-        sphereBody.angularVelocity.z = 0;
+        // 충돌이벤트
+        mySphere.cannonBody.addEventListener('collide', collide);
 
-        sphereBody.applyForce(new CANNON.Vec3(-200, 0, 0 ), sphereBody.position); // 왼쪽으로 200만큼의 힘. (공이 왼쪽으로 200만큼 밀려남)
     });
 
     const preventDragClick = new PreventDragClick(canvas);
+
+    // 삭제하기
+    const btn = document.createElement('button');
+    btn.style.cssText = 'position: absolute; left: 20px; top: 20px; font-size: 20px';
+    btn.innerHTML = '삭제';
+    document.body.append(btn);
+
+    btn.addEventListener('click', () => {
+        spheres.forEach(item => {
+            item.cannonBody.removeEventListener('collide', collide);
+            cannonWorld.removeBody(item.cannonBody);
+            scene.remove(item.mesh);
+        });
+    });
 
 
 	draw();

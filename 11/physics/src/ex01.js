@@ -101,7 +101,10 @@ export default function example() {
 
 		let cannonStepTime = 1/60;
 		if(delta < 0.01) cannonStepTime = 1/120;
-		cannonWorld.step(cannonStepTime, delta, 3); // 화면주사율에 따라 쓰도록 cannonStepTime 지정
+		cannonWorld.step(cannonStepTime, delta, 3); 
+		// step 메소드로 시간단계 설정
+		// (고정된 시간단위, 시간차, 잠재적으로 지연되었을 떄 간격을 매우는 횟수 임의로 지정)
+		// 화면주사율에 따라 쓰도록 cannonStepTime 지정
 
 		boxMesh.position.copy(boxBody.position); // 위치
 		boxMesh.quaternion.copy(boxBody.quaternion) // 회전
